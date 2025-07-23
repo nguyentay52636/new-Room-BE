@@ -210,6 +210,89 @@
 
 /**
  * @swagger
+ * /api/room:
+ *   get:
+ *     summary: Lấy tất cả phòng chat
+ *     tags: [Room]
+ *     description: Lấy danh sách tất cả các phòng chat trong hệ thống (không cần xác thực)
+ *     responses:
+ *       200:
+ *         description: Danh sách tất cả phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Room'
+ *       500:
+ *         description: Lỗi lấy danh sách phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi lấy danh sách phòng chat"
+ *                 error:
+ *                   type: string
+ *   post:
+ *     summary: Tạo phòng chat mới
+ *     tags: [Room]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RoomCreate'
+ *           examples:
+ *             group_room:
+ *               summary: Tạo phòng chat nhóm
+ *               value:
+ *                 tenPhong: "Nhóm chat dự án ABC"
+ *                 loaiPhong: "group"
+ *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "admin"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
+ *                 nguoiTao: "507f1f77bcf86cd799439012"
+ *                 anhDaiDien: "https://example.com/room-avatar.jpg"
+ *             private_room:
+ *               summary: Tạo phòng chat riêng tư
+ *               value:
+ *                 loaiPhong: "private"
+ *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "member"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
+ *                 nguoiTao: "507f1f77bcf86cd799439012"
+ *     responses:
+ *       201:
+ *         description: Phòng chat được tạo thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Room'
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Thiếu thông tin phòng chat"
+ *       500:
+ *         description: Lỗi tạo phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi tạo phòng"
+ *                 error:
+ *                   type: string
+ */
+
+/**
+ * @swagger
  * /api/room/search:
  *   get:
  *     summary: Tìm kiếm phòng chat
@@ -534,64 +617,6 @@
  *                 message:
  *                   type: string
  *                   example: "Lỗi xóa phòng"
- *                 error:
- *                   type: string
- */
-
-/**
- * @swagger
- * /api/room:
- *   post:
- *     summary: Tạo phòng chat mới
- *     tags: [Room]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/RoomCreate'
- *           examples:
- *             group_room:
- *               summary: Tạo phòng chat nhóm
- *               value:
- *                 tenPhong: "Nhóm chat dự án ABC"
- *                 loaiPhong: "group"
- *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "admin"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
- *                 nguoiTao: "507f1f77bcf86cd799439012"
- *                 anhDaiDien: "https://example.com/room-avatar.jpg"
- *             private_room:
- *               summary: Tạo phòng chat riêng tư
- *               value:
- *                 loaiPhong: "private"
- *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "member"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
- *                 nguoiTao: "507f1f77bcf86cd799439012"
- *     responses:
- *       201:
- *         description: Phòng chat được tạo thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Room'
- *       400:
- *         description: Dữ liệu không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Thiếu thông tin phòng chat"
- *       500:
- *         description: Lỗi tạo phòng chat
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi tạo phòng"
  *                 error:
  *                   type: string
  */

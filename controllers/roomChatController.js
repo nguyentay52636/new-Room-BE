@@ -16,6 +16,14 @@ const checkRoomAccess = async (roomId, userId) => {
   }
   return { room, member };
 };
+const getAllRom = async (req, res) => {
+try {
+    const rooms = await PhongChat.find();
+    res.status(200).json(rooms);
+} catch (error) {
+    res.status(500).json({ message: 'Lỗi lấy danh sách phòng chat', error: error.message });
+}
+}
 
 // Lấy danh sách phòng chat của người dùng
 const getRoomsOfUser = async (req, res) => {
@@ -612,4 +620,5 @@ module.exports = {
   addMemberToRoom,
   leaveRoom,
   transferAdmin,
+  getAllRom
 };
