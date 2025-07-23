@@ -1,9 +1,8 @@
 // controllers/notificationController.js
 const ThongBao = require('../models/ThongBao');
 const PhongChat = require('../models/PhongChat');
-const TinNhan = require('../models/TinNhan');
 
-// Kiểm tra quyền truy cập phòng chat
+// Kiểm tra quyền truy cập phòng chat (giữ nguyên từ roomController.js để tránh xung đột)
 const checkRoomAccess = async (roomId, userId) => {
   const room = await PhongChat.findById(roomId);
   if (!room) {
@@ -19,7 +18,7 @@ const checkRoomAccess = async (roomId, userId) => {
 // Lấy danh sách thông báo của người dùng
 const getNotifications = async (req, res) => {
   const userId = req.user.id;
-  const { page = 1, limit = 20, type } = req.query;
+  const { type } = req.query;
 
   try {
     const query = { nguoiNhan: userId };
@@ -28,21 +27,16 @@ const getNotifications = async (req, res) => {
     }
 
     const notifications = await ThongBao.find(query)
-      .populate('nguoiNhan', 'hoTen avatar')
+      .populate('nguoiNhan', 'ten anhDaiDien') // Sửa: hoTen -> ten, avatar -> anhDaiDien
       .populate('roomId', 'tenPhong loaiPhong')
-      .populate('tinNhanId', 'noiDung loaiTinNhan nguoiGuiId')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .populate({
+        path: 'tinNhanId',
+        select: 'noiDung loaiTinNhan nguoiGuiId',
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' } // Sửa: hoTen -> ten, avatar -> anhDaiDien
+      })
+      .sort({ createdAt: -1 });
 
-    const total = await ThongBao.countDocuments(query);
-
-    res.status(200).json({
-      notifications,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
-    });
+    res.status(200).json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi lấy danh sách thông báo', error: error.message });
   }
@@ -51,25 +45,19 @@ const getNotifications = async (req, res) => {
 // Lấy thông báo chưa đọc
 const getUnreadNotifications = async (req, res) => {
   const userId = req.user.id;
-  const { page = 1, limit = 20 } = req.query;
 
   try {
     const notifications = await ThongBao.find({ nguoiNhan: userId, daDoc: false })
-      .populate('nguoiNhan', 'hoTen avatar')
+      .populate('nguoiNhan', 'ten anhDaiDien') // Sửa: hoTen -> ten, avatar -> anhDaiDien
       .populate('roomId', 'tenPhong loaiPhong')
-      .populate('tinNhanId', 'noiDung loaiTinNhan nguoiGuiId')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .populate({
+        path: 'tinNhanId',
+        select: 'noiDung loaiTinNhan nguoiGuiId',
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' } // Sửa: hoTen -> ten, avatar -> anhDaiDien
+      })
+      .sort({ createdAt: -1 });
 
-    const total = await ThongBao.countDocuments({ nguoiNhan: userId, daDoc: false });
-
-    res.status(200).json({
-      notifications,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
-    });
+    res.status(200).json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi lấy danh sách thông báo chưa đọc', error: error.message });
   }
@@ -94,9 +82,13 @@ const markNotificationAsRead = async (req, res) => {
     await notification.save();
 
     const updatedNotification = await ThongBao.findById(id)
-      .populate('nguoiNhan', 'hoTen avatar')
+      .populate('nguoiNhan', 'ten anhDaiDien') // Sửa: hoTen -> ten, avatar -> anhDaiDien
       .populate('roomId', 'tenPhong loaiPhong')
-      .populate('tinNhanId', 'noiDung loaiTinNhan nguoiGuiId');
+      .populate({
+        path: 'tinNhanId',
+        select: 'noiDung loaiTinNhan nguoiGuiId',
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' } // Sửa: hoTen -> ten, avatar -> anhDaiDien
+      });
 
     res.status(200).json(updatedNotification);
   } catch (error) {
@@ -162,26 +154,24 @@ const deleteAllNotifications = async (req, res) => {
   }
 };
 
-// Helper function: Tạo thông báo (dùng trong các controller khác)
-const createNotification = async ({ nguoiNhan, loai, noiDung, roomId, tinNhanId }, io) => {
-  const notification = await ThongBao.create({
-    nguoiNhan,
-    loai,
-    noiDung,
-    roomId,
-    tinNhanId,
-    daDoc: false,
-  });
-
-  const populatedNotification = await ThongBao.findById(notification._id)
-    .populate('nguoiNhan', 'hoTen avatar')
-    .populate('roomId', 'tenPhong loaiPhong')
-    .populate('tinNhanId', 'noiDung loaiTinNhan nguoiGuiId');
-
-  // Gửi thông báo real-time
-  io.to(nguoiNhan.toString()).emit('newNotification', populatedNotification);
-
-  return populatedNotification;
+// Tạo thông báo
+const createNotification = async (data, io) => {
+  try {
+    const notification = await ThongBao.create(data);
+    const populatedNotification = await ThongBao.findById(notification._id)
+      .populate('nguoiNhan', 'ten anhDaiDien') // Sửa: hoTen -> ten, avatar -> anhDaiDien
+      .populate('roomId', 'tenPhong loaiPhong')
+      .populate({
+        path: 'tinNhanId',
+        select: 'noiDung loaiTinNhan nguoiGuiId',
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' } // Sửa: hoTen -> ten, avatar -> anhDaiDien
+      });
+    io.to(data.nguoiNhan.toString()).emit('newNotification', populatedNotification);
+    return populatedNotification;
+  } catch (error) {
+    console.error('Lỗi tạo thông báo:', error.message);
+    throw error;
+  }
 };
 
 // Helper function: Tích hợp Socket.IO
@@ -202,9 +192,13 @@ const setupNotificationSocket = (io) => {
         await notification.save();
 
         const updatedNotification = await ThongBao.findById(id)
-          .populate('nguoiNhan', 'hoTen avatar')
+          .populate('nguoiNhan', 'ten anhDaiDien') // Sửa: hoTen -> ten, avatar -> anhDaiDien
           .populate('roomId', 'tenPhong loaiPhong')
-          .populate('tinNhanId', 'noiDung loaiTinNhan nguoiGuiId');
+          .populate({
+            path: 'tinNhanId',
+            select: 'noiDung loaiTinNhan nguoiGuiId',
+            populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' } // Sửa: hoTen -> ten, avatar -> anhDaiDien
+          });
 
         io.to(userId).emit('notificationRead', updatedNotification);
       } catch (error) {

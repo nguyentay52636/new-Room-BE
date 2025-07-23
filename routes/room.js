@@ -2,44 +2,45 @@
 const express = require('express');
 const router = express.Router();
 const roomController = require('../controllers/roomChatController');
-     
+const middlewareController = require('../controllers/middlewareController');
 
-// Search rooms
-router.get('/search', roomController.searchRooms);
+// Search rooms - cần auth
+router.get('/search', middlewareController.verifyToken, roomController.searchRooms);
 
-// Get rooms of user
+// Get rooms of user - không cần auth theo swagger
 router.get('/user/:userId', roomController.getRoomsOfUser);
 
-// Get room by ID
-router.get('/:roomId', roomController.getRoomById);
+// Get room by ID - cần auth
+router.get('/:roomId', middlewareController.verifyToken, roomController.getRoomById);
 
-// Create new room
+// Create new room - không có security trong swagger nhưng thực tế nên có
 router.post('/', roomController.createRoom);
 
-// Find or create private room between 2 users
+// Find or create private room between 2 users - không có security trong swagger
 router.post('/find-or-create-private', roomController.findOrCreatePrivateRoom);
 
-// Add message to room
-router.post('/:roomId/message', roomController.addMessageToRoom);
+// Add message to room - cần auth
+router.post('/:roomId/message', middlewareController.verifyToken, roomController.addMessageToRoom);
 
-// Remove message from room
-router.delete('/:roomId/message/:messageId', roomController.removeMessageFromRoom);
+// Remove message from room - cần auth
+router.delete('/:roomId/message/:messageId', middlewareController.verifyToken, roomController.removeMessageFromRoom);
 
-// Update room
-router.put('/:roomId', roomController.updateRoom);
+// Update room - cần auth
+router.put('/:roomId', middlewareController.verifyToken, roomController.updateRoom);
 
-// Delete room
-router.delete('/:roomId', roomController.deleteRoom);
+// Delete room - cần auth
+router.delete('/:roomId', middlewareController.verifyToken, roomController.deleteRoom);
 
-// Add member to group room
-router.post('/:roomId/add-member', roomController.addMemberToRoom);
+// Add member to group room - cần auth
+router.post('/:roomId/add-member', middlewareController.verifyToken, roomController.addMemberToRoom);
 
-// Remove member from group room (leave room)
-router.post('/:roomId/leave', roomController.leaveRoom);
+// Remove member from group room (leave room) - cần auth
+router.post('/:roomId/leave', middlewareController.verifyToken, roomController.leaveRoom);
 
-// Transfer admin role
-router.put('/:roomId/transfer-admin', roomController.transferAdmin);
+// Transfer admin role - cần auth
+router.put('/:roomId/transfer-admin', middlewareController.verifyToken, roomController.transferAdmin);
 
+// Get all rooms (this might not need auth depending on use case)
 router.get('/', roomController.getAllRom);
 
 module.exports = router;

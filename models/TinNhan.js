@@ -1,4 +1,3 @@
-// models/TinNhan.js
 const mongoose = require('mongoose');
 
 const TinNhanSchema = new mongoose.Schema({
@@ -11,7 +10,7 @@ const TinNhanSchema = new mongoose.Schema({
     noiDung: { type: String },
     nguoiGuiId: { type: mongoose.Schema.Types.ObjectId, ref: 'nguoiDung' },
   },
-  daDoc: [{ type: mongoose.Schema.Types.ObjectId, ref: 'nguoiDung' }], // Danh sách người đã đọc
+  daDoc: [{ type: mongoose.Schema.Types.ObjectId, ref: 'nguoiDung' }],
   trangThai: { type: String, enum: ['sent', 'edited', 'deleted', 'recalled'], default: 'sent' },
   loaiTinNhan: { type: String, enum: ['text', 'image', 'cuoc_goi', 'system'], default: 'text' },
   cuocGoi: {

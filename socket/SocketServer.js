@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const PhongChat = require('../models/PhongChat');
 const TinNhan = require('../models/TinNhan');
 const { createMessage, updateMessage, deleteMessage } = require('../controllers/messageController');
-const { createNotification } = require('../controllers/notificationChat');
+const { createNotification } = require('../controllers/notificationChatController');
 
 const setupSocket = (server) => {
   const io = socketIo(server, {

@@ -1,8 +1,7 @@
-// controllers/roomController.js
+
 const PhongChat = require('../models/PhongChat');
 const TinNhan = require('../models/TinNhan');
-const ThongBao = require('../models/ThongBao');
-const { createNotification } = require('./notificationChat');
+const { createNotification } = require('./notificationChatController');
 
 // Kiểm tra quyền truy cập phòng chat
 const checkRoomAccess = async (roomId, userId) => {
@@ -16,37 +15,32 @@ const checkRoomAccess = async (roomId, userId) => {
   }
   return { room, member };
 };
+
+// Lấy tất cả phòng chat (cho admin hoặc debug)
 const getAllRom = async (req, res) => {
-try {
-    const rooms = await PhongChat.find();
+  try {
+    const rooms = await PhongChat.find()
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
+      .populate('tinNhanCuoi');
     res.status(200).json(rooms);
-} catch (error) {
+  } catch (error) {
     res.status(500).json({ message: 'Lỗi lấy danh sách phòng chat', error: error.message });
-}
-}
+  }
+};
 
 // Lấy danh sách phòng chat của người dùng
 const getRoomsOfUser = async (req, res) => {
   const { userId } = req.params;
-  const { page = 1, limit = 20 } = req.query;
 
   try {
     const rooms = await PhongChat.find({ 'thanhVien.nguoiDung': userId, 'thanhVien.trangThai': 'active' })
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate('tinNhanCuoi')
-      .sort({ updatedAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .sort({ updatedAt: -1 });
 
-    const total = await PhongChat.countDocuments({ 'thanhVien.nguoiDung': userId, 'thanhVien.trangThai': 'active' });
-
-    res.status(200).json({
-      rooms,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
-    });
+    res.status(200).json(rooms);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi lấy danh sách phòng chat', error: error.message });
   }
@@ -61,14 +55,13 @@ const getRoomById = async (req, res) => {
     await checkRoomAccess(roomId, userId);
 
     const room = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate({
         path: 'tinNhan',
-        populate: { path: 'nguoiGuiId', select: 'hoTen avatar' },
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' },
         options: { sort: { createdAt: 1 } },
-      })
-      .populate('tinNhanGhim');
+      });
 
     if (!room) {
       return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
@@ -99,9 +92,8 @@ const createRoom = async (req, res) => {
       loaiPhong,
       thanhVien,
       nguoiTao,
-      anhDaiDien,
+      anhDaiDien: anhDaiDien || '',
       tinNhan: [],
-      tinNhanGhim: [],
     });
 
     const systemMessage = await TinNhan.create({
@@ -129,11 +121,11 @@ const createRoom = async (req, res) => {
     }
 
     const populatedRoom = await PhongChat.findById(newRoom._id)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate('tinNhanCuoi');
 
-    req.io.to(newRoom._id).emit('roomCreated', populatedRoom); // Thông báo real-time
+    req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
     res.status(201).json(populatedRoom);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi tạo phòng', error: error.message });
@@ -159,11 +151,11 @@ const findOrCreatePrivateRoom = async (req, res) => {
       'thanhVien.trangThai': 'active',
       $where: 'this.thanhVien.length == 2',
     })
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate({
         path: 'tinNhan',
-        populate: { path: 'nguoiGuiId', select: 'hoTen avatar' },
+        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' },
         options: { sort: { createdAt: 1 } },
       });
 
@@ -185,7 +177,6 @@ const findOrCreatePrivateRoom = async (req, res) => {
       nguoiTao: userId1,
       anhDaiDien: '',
       tinNhan: [],
-      tinNhanGhim: [],
     });
 
     const systemMessage = await TinNhan.create({
@@ -210,11 +201,11 @@ const findOrCreatePrivateRoom = async (req, res) => {
     }, req.io);
 
     const populatedRoom = await PhongChat.findById(newRoom._id)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate('tinNhanCuoi');
 
-    req.io.to(newRoom._id).emit('roomCreated', populatedRoom); // Thông báo real-time
+    req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
     res.status(201).json({
       room: populatedRoom,
       isNewRoom: true,
@@ -318,8 +309,8 @@ const updateRoom = async (req, res) => {
     if (thanhVien) updateData.thanhVien = thanhVien;
 
     const updatedRoom = await PhongChat.findByIdAndUpdate(roomId, updateData, { new: true, runValidators: true })
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar');
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien');
 
     if (Object.keys(updateData).length > 0) {
       const systemMessage = await TinNhan.create({
@@ -410,8 +401,8 @@ const searchRooms = async (req, res) => {
     }
 
     const rooms = await PhongChat.find(query)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar')
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien')
       .populate('tinNhanCuoi')
       .sort({ updatedAt: -1 });
 
@@ -442,7 +433,6 @@ const addMemberToRoom = async (req, res) => {
     }
     if (existingMember && existingMember.trangThai === 'left') {
       existingMember.trangThai = 'active';
-      existingMember.thoiGianThamGia = new Date();
     } else {
       room.thanhVien.push({ nguoiDung: newMemberId, vaiTro: 'member', trangThai: 'active' });
     }
@@ -471,8 +461,8 @@ const addMemberToRoom = async (req, res) => {
     }, req.io);
 
     const updatedRoom = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar');
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien');
 
     req.io.to(roomId).emit('memberAdded', { roomId, newMemberId });
     res.status(200).json(updatedRoom);
@@ -591,8 +581,8 @@ const transferAdmin = async (req, res) => {
     }
 
     const updatedRoom = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'hoTen avatar')
-      .populate('nguoiTao', 'hoTen avatar');
+      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
+      .populate('nguoiTao', 'ten anhDaiDien');
 
     req.io.to(roomId).emit('adminTransferred', { roomId, newAdminId });
     res.status(200).json(updatedRoom);
@@ -608,6 +598,7 @@ const transferAdmin = async (req, res) => {
 };
 
 module.exports = {
+  getAllRom,
   getRoomsOfUser,
   getRoomById,
   createRoom,
@@ -620,5 +611,4 @@ module.exports = {
   addMemberToRoom,
   leaveRoom,
   transferAdmin,
-  getAllRom
 };

@@ -205,7 +205,10 @@
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- *       description: JWT token từ header 'token' với format 'Bearer <token>'
+ *       description: |
+ *         JWT token có thể được gửi theo 2 cách:
+ *         1. Header 'Authorization': 'Bearer <token>'
+ *         2. Header 'token': 'Bearer <token>' hoặc chỉ '<token>'
  */
 
 /**

@@ -18,27 +18,17 @@ const checkRoomAccess = async (roomId, userId) => {
 const getMessages = async (req, res) => {
   const { roomId } = req.params;
   const userId = req.user.id;
-  const { page = 1, limit = 20 } = req.query;
 
   try {
     await checkRoomAccess(roomId, userId);
 
     const messages = await TinNhan.find({ roomId })
-      .populate('nguoiGuiId', 'hoTen avatar') // Chỉ lấy các trường cần thiết
-      .populate('roomId', 'tenPhong loaiPhong')
-      .populate('phanHoiTinNhan.nguoiGuiId', 'hoTen')
-      .sort({ createdAt: 1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .populate('nguoiGuiId')
+      .populate('roomId')
+      .populate('phanHoiTinNhan.nguoiGuiId')
+      .sort({ createdAt: 1 });
 
-    const total = await TinNhan.countDocuments({ roomId });
-
-    res.json({
-      messages,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / limit),
-    });
+    res.json(messages);
   } catch (error) {
     if (error.message === 'Không tìm thấy phòng chat') {
       return res.status(404).json({ message: error.message });

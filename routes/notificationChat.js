@@ -29,7 +29,7 @@ const {
   markAllNotificationsAsRead,
   deleteNotification,
   deleteAllNotifications,
-} = require('../controllers/notificationChat');
+} = require('../controllers/notificationChatController');
 
 router.get('/', getNotifications);
 router.get('/unread', getUnreadNotifications);
