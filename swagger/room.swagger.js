@@ -3,8 +3,6 @@
  * tags:
  *   - name: Room
  *     description: API quản lý phòng chat
- *   - name: Message
- *     description: API quản lý tin nhắn
  */
 
 /**
@@ -22,118 +20,34 @@
  *           type: string
  *           description: Họ tên người dùng
  *           example: "Nguyễn Văn A"
- *         anhDaiDien:
+ *         avatar:
  *           type: string
  *           description: URL ảnh đại diện
  *           example: "https://example.com/avatar.jpg"
- *     File:
+ *     Member:
  *       type: object
  *       properties:
- *         url:
- *           type: string
- *           description: URL của tệp
- *           example: "https://example.com/file.jpg"
- *         loai:
- *           type: string
- *           description: Loại tệp (image, video, pdf, etc.)
- *           example: "image/jpeg"
- *         ten:
- *           type: string
- *           description: Tên tệp
- *           example: "image.jpg"
- *     CallInfo:
- *       type: object
- *       properties:
- *         trangThai:
- *           type: string
- *           enum: [missed, ended, declined, ongoing]
- *           description: Trạng thái cuộc gọi
- *           example: "ended"
- *         thoiLuong:
- *           type: number
- *           description: Thời lượng cuộc gọi (giây)
- *           example: 120
- *         loai:
- *           type: string
- *           enum: [audio, video]
- *           description: Loại cuộc gọi
- *           example: "video"
- *         thanhVien:
- *           type: array
- *           items:
- *             type: string
- *           description: Danh sách ID người tham gia cuộc gọi
- *           example: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
- *     Message:
- *       type: object
- *       required:
- *         - roomId
- *         - nguoiGuiId
- *       properties:
- *         _id:
- *           type: string
- *           description: ID của tin nhắn
- *           example: "507f1f77bcf86cd799439014"
- *         roomId:
- *           type: string
- *           description: ID của phòng chat
- *           example: "507f1f77bcf86cd799439011"
- *         nguoiGuiId:
+ *         nguoiDung:
  *           $ref: '#/components/schemas/UserInfo'
- *           description: Thông tin người gửi
- *         noiDung:
+ *         vaiTro:
  *           type: string
- *           description: Nội dung tin nhắn
- *           example: "Xin chào mọi người!"
- *         tapTin:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/File'
- *           description: Danh sách tệp đính kèm
- *         phanHoiTinNhan:
- *           type: object
- *           properties:
- *             _id:
- *               type: string
- *               description: ID của tin nhắn được trả lời
- *               example: "507f1f77bcf86cd799439015"
- *             noiDung:
- *               type: string
- *               description: Nội dung tin nhắn được trả lời
- *               example: "Tin nhắn gốc"
- *             nguoiGuiId:
- *               $ref: '#/components/schemas/UserInfo'
- *           description: Thông tin tin nhắn được trả lời
- *         daDoc:
- *           type: boolean
- *           description: Trạng thái đọc của tin nhắn
- *           example: false
+ *           enum: [admin, member]
+ *           description: Vai trò trong phòng
+ *           example: "member"
  *         trangThai:
  *           type: string
- *           enum: [sent, edited, deleted]
- *           description: Trạng thái tin nhắn
- *           example: "sent"
- *         loaiTinNhan:
- *           type: string
- *           enum: [text, image, cuoc_goi, system]
- *           description: Loại tin nhắn
- *           example: "text"
- *         cuocGoi:
- *           $ref: '#/components/schemas/CallInfo'
- *           description: Thông tin cuộc gọi (nếu là tin nhắn loại cuoc_goi)
- *         createdAt:
+ *           enum: [active, left]
+ *           description: Trạng thái thành viên
+ *           example: "active"
+ *         thoiGianThamGia:
  *           type: string
  *           format: date-time
- *           description: Thời gian tạo tin nhắn
- *         updatedAt:
+ *           description: Thời gian tham gia phòng
+ *         bietDanh:
  *           type: string
- *           format: date-time
- *           description: Thời gian cập nhật tin nhắn
+ *           description: Biệt danh trong phòng
  *     Room:
  *       type: object
- *       required:
- *         - loaiPhong
- *         - thanhVien
  *       properties:
  *         _id:
  *           type: string
@@ -141,7 +55,7 @@
  *           example: "507f1f77bcf86cd799439011"
  *         tenPhong:
  *           type: string
- *           description: Tên phòng chat
+ *           description: Tên phòng chat (bắt buộc với group)
  *           example: "Nhóm chat ABC"
  *         loaiPhong:
  *           type: string
@@ -151,20 +65,7 @@
  *         thanhVien:
  *           type: array
  *           items:
- *             type: object
- *             properties:
- *               nguoiDung:
- *                 $ref: '#/components/schemas/UserInfo'
- *               vaiTro:
- *                 type: string
- *                 enum: [admin, member]
- *                 description: Vai trò trong phòng
- *                 example: "member"
- *               trangThai:
- *                 type: string
- *                 enum: [active, left]
- *                 description: Trạng thái thành viên
- *                 example: "active"
+ *             $ref: '#/components/schemas/Member'
  *           description: Danh sách thành viên trong phòng chat
  *         nguoiTao:
  *           $ref: '#/components/schemas/UserInfo'
@@ -176,11 +77,16 @@
  *         tinNhan:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/Message'
- *           description: Danh sách tin nhắn trong phòng
+ *             type: string
+ *           description: Danh sách ID tin nhắn trong phòng
  *         tinNhanCuoi:
- *           $ref: '#/components/schemas/Message'
- *           description: Tin nhắn cuối cùng trong phòng
+ *           type: string
+ *           description: ID tin nhắn cuối cùng trong phòng
+ *         tinNhanGhim:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Danh sách ID tin nhắn được ghim
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -208,9 +114,21 @@
  *         thanhVien:
  *           type: array
  *           items:
- *             type: string
- *           description: Danh sách ID thành viên
- *           example: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
+ *             type: object
+ *             properties:
+ *               nguoiDung:
+ *                 type: string
+ *                 description: ID người dùng
+ *               vaiTro:
+ *                 type: string
+ *                 enum: [admin, member]
+ *                 default: member
+ *               trangThai:
+ *                 type: string
+ *                 enum: [active, left]
+ *                 default: active
+ *           description: Danh sách thành viên
+ *           example: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "admin"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
  *         nguoiTao:
  *           type: string
  *           description: ID người tạo phòng
@@ -233,85 +151,119 @@
  *           type: string
  *           description: ID người dùng thứ hai
  *           example: "507f1f77bcf86cd799439013"
- *     MessageCreate:
+ *     RoomUpdate:
  *       type: object
- *       required:
- *         - roomId
- *         - nguoiGuiId
  *       properties:
- *         roomId:
+ *         tenPhong:
  *           type: string
- *           description: ID của phòng chat
- *           example: "507f1f77bcf86cd799439011"
- *         nguoiGuiId:
+ *           description: Tên phòng chat mới
+ *           example: "Tên phòng đã cập nhật"
+ *         anhDaiDien:
  *           type: string
- *           description: ID của người gửi
- *           example: "507f1f77bcf86cd799439012"
- *         noiDung:
- *           type: string
- *           description: Nội dung tin nhắn
- *           example: "Xin chào mọi người!"
- *         tapTin:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/File'
- *           description: Danh sách tệp đính kèm
- *         phanHoiTinNhan:
- *           type: string
- *           description: ID của tin nhắn được trả lời
- *           example: "507f1f77bcf86cd799439015"
- *         loaiTinNhan:
- *           type: string
- *           enum: [text, image, cuoc_goi, system]
- *           description: Loại tin nhắn
- *           example: "text"
- *     CallCreate:
- *       type: object
- *       required:
- *         - roomId
- *         - nguoiGuiId
- *         - loai
- *       properties:
- *         roomId:
- *           type: string
- *           description: ID của phòng chat
- *           example: "507f1f77bcf86cd799439011"
- *         nguoiGuiId:
- *           type: string
- *           description: ID của người gửi
- *           example: "507f1f77bcf86cd799439012"
- *         loai:
- *           type: string
- *           enum: [audio, video]
- *           description: Loại cuộc gọi
- *           example: "video"
- *         trangThai:
- *           type: string
- *           enum: [missed, ended, declined, ongoing]
- *           description: Trạng thái cuộc gọi
- *           example: "ended"
- *         thoiLuong:
- *           type: number
- *           description: Thời lượng cuộc gọi (giây)
- *           example: 120
+ *           description: URL ảnh đại diện mới
+ *           example: "https://example.com/new-avatar.jpg"
  *         thanhVien:
  *           type: array
  *           items:
- *             type: string
- *           description: Danh sách ID người tham gia
- *           example: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
- *     MessageUpdate:
+ *             type: object
+ *             properties:
+ *               nguoiDung:
+ *                 type: string
+ *               vaiTro:
+ *                 type: string
+ *                 enum: [admin, member]
+ *               trangThai:
+ *                 type: string
+ *                 enum: [active, left]
+ *           description: Danh sách thành viên mới
+ *     RoomListResponse:
  *       type: object
  *       properties:
- *         noiDungMoi:
- *           type: string
- *           description: Nội dung tin nhắn mới
- *           example: "Nội dung đã chỉnh sửa"
- *         tapTin:
+ *         rooms:
  *           type: array
  *           items:
- *             $ref: '#/components/schemas/File'
- *           description: Danh sách tệp đính kèm mới
+ *             $ref: '#/components/schemas/Room'
+ *         total:
+ *           type: integer
+ *           description: Tổng số phòng
+ *           example: 50
+ *         page:
+ *           type: integer
+ *           description: Trang hiện tại
+ *           example: 1
+ *         totalPages:
+ *           type: integer
+ *           description: Tổng số trang
+ *           example: 5
+ */
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *       description: JWT token từ header 'token' với format 'Bearer <token>'
+ */
+
+/**
+ * @swagger
+ * /api/room/search:
+ *   get:
+ *     summary: Tìm kiếm phòng chat
+ *     tags: [Room]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: keyword
+ *         schema:
+ *           type: string
+ *         description: Từ khóa tìm kiếm tên phòng
+ *         example: "nhóm chat"
+ *     responses:
+ *       200:
+ *         description: Danh sách phòng chat tìm được
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Room'
+ *       401:
+ *         description: Chưa đăng nhập
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Bạn chưa đăng nhập"
+ *       403:
+ *         description: Token không hợp lệ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token không hợp lệ"
+ *       500:
+ *         description: Lỗi tìm kiếm phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi tìm kiếm phòng chat"
+ *                 error:
+ *                   type: string
  */
 
 /**
@@ -320,8 +272,6 @@
  *   get:
  *     summary: Lấy danh sách phòng chat của người dùng
  *     tags: [Room]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
@@ -330,25 +280,25 @@
  *           type: string
  *         description: ID của người dùng
  *         example: "507f1f77bcf86cd799439012"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang (mặc định 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Số phòng mỗi trang (mặc định 20)
  *     responses:
  *       200:
  *         description: Danh sách phòng chat của người dùng (sắp xếp theo thời gian cập nhật mới nhất)
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Room'
- *       400:
- *         description: ID người dùng không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "ID người dùng không hợp lệ"
+ *               $ref: '#/components/schemas/RoomListResponse'
  *       500:
  *         description: Lỗi lấy danh sách phòng chat
  *         content:
@@ -386,8 +336,8 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Room'
- *       400:
- *         description: ID phòng chat không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -395,9 +345,9 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "ID phòng chat không hợp lệ"
+ *                   example: "Bạn chưa đăng nhập"
  *       403:
- *         description: Người dùng không thuộc phòng chat
+ *         description: Token không hợp lệ hoặc người dùng không thuộc phòng chat
  *         content:
  *           application/json:
  *             schema:
@@ -405,7 +355,15 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Người dùng không thuộc phòng chat"
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_member:
+ *                 summary: Không thuộc phòng chat
+ *                 value:
+ *                   message: "Người dùng không thuộc phòng chat"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -446,22 +404,7 @@
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               tenPhong:
- *                 type: string
- *                 description: Tên phòng chat mới
- *                 example: "Tên phòng đã cập nhật"
- *               anhDaiDien:
- *                 type: string
- *                 description: URL ảnh đại diện mới
- *                 example: "https://example.com/new-avatar.jpg"
- *               thanhVien:
- *                 type: array
- *                 items:
- *                   type: string
- *                 description: Danh sách ID thành viên mới
- *                 example: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
+ *             $ref: '#/components/schemas/RoomUpdate'
  *     responses:
  *       200:
  *         description: Phòng chat được cập nhật thành công
@@ -469,8 +412,8 @@
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Room'
- *       400:
- *         description: ID phòng chat không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -478,9 +421,9 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "ID phòng chat không hợp lệ"
+ *                   example: "Bạn chưa đăng nhập"
  *       403:
- *         description: Chỉ admin mới có thể cập nhật phòng chat
+ *         description: Token không hợp lệ hoặc chỉ admin mới có thể cập nhật phòng chat
  *         content:
  *           application/json:
  *             schema:
@@ -488,7 +431,15 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Chỉ admin mới có thể cập nhật phòng chat"
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_admin:
+ *                 summary: Không phải admin
+ *                 value:
+ *                   message: "Chỉ admin mới có thể cập nhật phòng chat"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -535,8 +486,8 @@
  *                 message:
  *                   type: string
  *                   example: "Xóa phòng thành công"
- *       400:
- *         description: ID phòng chat không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -544,9 +495,9 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "ID phòng chat không hợp lệ"
+ *                   example: "Bạn chưa đăng nhập"
  *       403:
- *         description: Chỉ admin mới có thể xóa phòng chat
+ *         description: Token không hợp lệ hoặc chỉ admin mới có thể xóa phòng chat
  *         content:
  *           application/json:
  *             schema:
@@ -554,7 +505,15 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Chỉ admin mới có thể xóa phòng chat"
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_admin:
+ *                 summary: Không phải admin
+ *                 value:
+ *                   message: "Chỉ admin mới có thể xóa phòng chat"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -585,8 +544,6 @@
  *   post:
  *     summary: Tạo phòng chat mới
  *     tags: [Room]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -599,14 +556,14 @@
  *               value:
  *                 tenPhong: "Nhóm chat dự án ABC"
  *                 loaiPhong: "group"
- *                 thanhVien: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
+ *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "admin"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
  *                 nguoiTao: "507f1f77bcf86cd799439012"
  *                 anhDaiDien: "https://example.com/room-avatar.jpg"
  *             private_room:
  *               summary: Tạo phòng chat riêng tư
  *               value:
  *                 loaiPhong: "private"
- *                 thanhVien: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
+ *                 thanhVien: [{"nguoiDung": "507f1f77bcf86cd799439012", "vaiTro": "member"}, {"nguoiDung": "507f1f77bcf86cd799439013", "vaiTro": "member"}]
  *                 nguoiTao: "507f1f77bcf86cd799439012"
  *     responses:
  *       201:
@@ -645,8 +602,6 @@
  *   post:
  *     summary: Tìm hoặc tạo phòng chat private giữa 2 người dùng
  *     tags: [Room]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -705,10 +660,6 @@
  *                 summary: Cùng một người dùng
  *                 value:
  *                   message: "Không thể tạo phòng chat với chính mình"
- *               invalid_id:
- *                 summary: ID không hợp lệ
- *                 value:
- *                   message: "ID người dùng không hợp lệ"
  *       500:
  *         description: Lỗi tìm/tạo phòng chat private
  *         content:
@@ -745,6 +696,8 @@
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - messageId
  *             properties:
  *               messageId:
  *                 type: string
@@ -761,8 +714,8 @@
  *                 message:
  *                   type: string
  *                   example: "Thêm tin nhắn vào phòng thành công"
- *       400:
- *         description: ID không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -770,7 +723,25 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "ID phòng chat hoặc tin nhắn không hợp lệ"
+ *                   example: "Bạn chưa đăng nhập"
+ *       403:
+ *         description: Token không hợp lệ hoặc người dùng không thuộc phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_member:
+ *                 summary: Không thuộc phòng chat
+ *                 value:
+ *                   message: "Người dùng không thuộc phòng chat"
  *       404:
  *         description: Không tìm thấy phòng chat hoặc tin nhắn
  *         content:
@@ -837,8 +808,8 @@
  *                 message:
  *                   type: string
  *                   example: "Xóa tin nhắn khỏi phòng thành công"
- *       400:
- *         description: ID không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -846,9 +817,9 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "ID phòng chat hoặc tin nhắn không hợp lệ"
+ *                   example: "Bạn chưa đăng nhập"
  *       403:
- *         description: Chỉ admin mới có thể xóa tin nhắn
+ *         description: Token không hợp lệ hoặc chỉ admin mới có thể xóa tin nhắn hoặc người dùng không thuộc phòng chat
  *         content:
  *           application/json:
  *             schema:
@@ -856,7 +827,19 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Chỉ admin mới có thể xóa tin nhắn khỏi phòng"
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_admin:
+ *                 summary: Không phải admin
+ *                 value:
+ *                   message: "Chỉ admin mới có thể xóa tin nhắn khỏi phòng"
+ *               not_member:
+ *                 summary: Không thuộc phòng
+ *                 value:
+ *                   message: "Người dùng không thuộc phòng chat"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -883,10 +866,10 @@
 
 /**
  * @swagger
- * /api/message/room/{roomId}:
- *   get:
- *     summary: Lấy danh sách tin nhắn trong phòng chat
- *     tags: [Message]
+ * /api/room/{roomId}/add-member:
+ *   post:
+ *     summary: Thêm thành viên vào phòng chat nhóm
+ *     tags: [Room]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -897,137 +880,26 @@
  *           type: string
  *         description: ID của phòng chat
  *         example: "507f1f77bcf86cd799439011"
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Số trang
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Số tin nhắn mỗi trang
- *     responses:
- *       200:
- *         description: Danh sách tin nhắn trong phòng chat
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 messages:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Message'
- *                 totalMessages:
- *                   type: integer
- *                   description: Tổng số tin nhắn
- *                   example: 100
- *                 currentPage:
- *                   type: integer
- *                   description: Trang hiện tại
- *                   example: 1
- *                 totalPages:
- *                   type: integer
- *                   description: Tổng số trang
- *                   example: 5
- *       400:
- *         description: ID phòng chat không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "ID phòng chat không hợp lệ"
- *       500:
- *         description: Lỗi lấy tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi lấy tin nhắn"
- *                 error:
- *                   type: string
- */
-
-/**
- * @swagger
- * /api/message:
- *   get:
- *     summary: Lấy tất cả tin nhắn (dành cho quản trị viên)
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Danh sách tất cả tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lấy tất cả tin nhắn thành công"
- *                 messages:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Message'
- *       500:
- *         description: Lỗi lấy tất cả tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi lấy tất cả tin nhắn"
- *                 error:
- *                   type: string
- *   post:
- *     summary: Tạo tin nhắn mới
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/MessageCreate'
- *           examples:
- *             text_message:
- *               summary: Tạo tin nhắn văn bản
- *               value:
- *                 roomId: "507f1f77bcf86cd799439011"
- *                 nguoiGuiId: "507f1f77bcf86cd799439012"
- *                 noiDung: "Xin chào mọi người!"
- *                 phanHoiTinNhan: "507f1f77bcf86cd799439015"
- *             image_message:
- *               summary: Tạo tin nhắn hình ảnh
- *               value:
- *                 roomId: "507f1f77bcf86cd799439011"
- *                 nguoiGuiId: "507f1f77bcf86cd799439012"
- *                 tapTin:
- *                   - url: "https://example.com/image.jpg"
- *                     loai: "image/jpeg"
- *                     ten: "image.jpg"
- *                 loaiTinNhan: "image"
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: ID người dùng cần thêm vào phòng
+ *                 example: "507f1f77bcf86cd799439015"
  *     responses:
- *       201:
- *         description: Tin nhắn được tạo thành công
+ *       200:
+ *         description: Thêm thành viên thành công
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Message'
+ *               $ref: '#/components/schemas/Room'
  *       400:
  *         description: Dữ liệu không hợp lệ
  *         content:
@@ -1038,20 +910,16 @@
  *                 message:
  *                   type: string
  *             examples:
- *               missing_data:
- *                 summary: Thiếu thông tin bắt buộc
+ *               not_group:
+ *                 summary: Không phải phòng nhóm
  *                 value:
- *                   message: "Thiếu thông tin bắt buộc (roomId, nguoiGuiId, noiDung hoặc tapTin)"
- *               invalid_id:
- *                 summary: ID không hợp lệ
+ *                   message: "Chỉ có thể thêm thành viên vào phòng nhóm"
+ *               already_member:
+ *                 summary: Đã là thành viên
  *                 value:
- *                   message: "ID phòng chat hoặc người gửi không hợp lệ"
- *               invalid_reply:
- *                 summary: Tin nhắn trả lời không hợp lệ
- *                 value:
- *                   message: "ID tin nhắn trả lời không hợp lệ"
- *       403:
- *         description: Người dùng không thuộc phòng chat
+ *                   message: "Người dùng đã là thành viên của phòng"
+ *       401:
+ *         description: Chưa đăng nhập
  *         content:
  *           application/json:
  *             schema:
@@ -1059,7 +927,25 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Người dùng không thuộc phòng chat"
+ *                   example: "Bạn chưa đăng nhập"
+ *       403:
+ *         description: Token không hợp lệ hoặc chỉ admin mới có thể thêm thành viên
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_admin:
+ *                 summary: Không phải admin
+ *                 value:
+ *                   message: "Chỉ admin mới có thể thêm thành viên"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -1071,7 +957,7 @@
  *                   type: string
  *                   example: "Không tìm thấy phòng chat"
  *       500:
- *         description: Lỗi tạo tin nhắn
+ *         description: Lỗi thêm thành viên
  *         content:
  *           application/json:
  *             schema:
@@ -1079,233 +965,106 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Lỗi tạo tin nhắn"
+ *                   example: "Lỗi thêm thành viên"
  *                 error:
  *                   type: string
  */
 
 /**
  * @swagger
- * /api/message/{id}:
+ * /api/room/{roomId}/leave:
+ *   post:
+ *     summary: Rời khỏi phòng chat nhóm
+ *     tags: [Room]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roomId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID của phòng chat
+ *         example: "507f1f77bcf86cd799439011"
+ *     responses:
+ *       200:
+ *         description: Rời phòng thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Rời phòng thành công"
+ *       400:
+ *         description: Chỉ có thể rời khỏi phòng nhóm
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Chỉ có thể rời khỏi phòng nhóm"
+ *       401:
+ *         description: Chưa đăng nhập
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Bạn chưa đăng nhập"
+ *       403:
+ *         description: Token không hợp lệ hoặc admin không thể rời phòng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_admin:
+ *                 summary: Không phải admin
+ *                 value:
+ *                   message: "Admin không thể rời phòng, hãy chuyển quyền admin trước"
+ *       404:
+ *         description: Không tìm thấy phòng chat
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy phòng chat"
+ *       500:
+ *         description: Lỗi rời phòng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi rời phòng"
+ *                 error:
+ *                   type: string
+ */
+
+/**
+ * @swagger
+ * /api/room/{roomId}/transfer-admin:
  *   put:
- *     summary: Cập nhật tin nhắn
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID của tin nhắn cần cập nhật
- *         example: "507f1f77bcf86cd799439014"
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/MessageUpdate'
- *           example:
- *             noiDungMoi: "Nội dung đã chỉnh sửa"
- *             tapTin:
- *               - url: "https://example.com/new-image.jpg"
- *                 loai: "image/jpeg"
- *                 ten: "new-image.jpg"
- *     responses:
- *       200:
- *         description: Tin nhắn được cập nhật thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Message'
- *       400:
- *         description: Dữ liệu không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *             examples:
- *               missing_data:
- *                 summary: Thiếu nội dung hoặc tệp
- *                 value:
- *                   message: "Thiếu nội dung hoặc tệp tin nhắn mới"
- *               invalid_id:
- *                 summary: ID không hợp lệ
- *                 value:
- *                   message: "ID tin nhắn không hợp lệ"
- *       403:
- *         description: Không có quyền chỉnh sửa
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không có quyền chỉnh sửa tin nhắn"
- *       404:
- *         description: Không tìm thấy tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không tìm thấy tin nhắn"
- *       500:
- *         description: Lỗi cập nhật tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi cập nhật tin nhắn"
- *                 error:
- *                   type: string
- *   delete:
- *     summary: Xóa tin nhắn (soft delete)
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID của tin nhắn cần xóa
- *         example: "507f1f77bcf86cd799439014"
- *     responses:
- *       200:
- *         description: Tin nhắn được xóa thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Message'
- *       400:
- *         description: ID không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "ID tin nhắn không hợp lệ"
- *       403:
- *         description: Không có quyền xóa
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không có quyền xóa tin nhắn"
- *       404:
- *         description: Không tìm thấy tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không tìm thấy tin nhắn"
- *       500:
- *         description: Lỗi xóa tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi xóa tin nhắn"
- *                 error:
- *                   type: string
- */
-
-/**
- * @swagger
- * /api/message/{id}/read:
- *   patch:
- *     summary: Đánh dấu tin nhắn đã đọc
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: ID của tin nhắn
- *         example: "507f1f77bcf86cd799439014"
- *     responses:
- *       200:
- *         description: Tin nhắn được đánh dấu đã đọc
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Message'
- *       400:
- *         description: ID không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "ID tin nhắn không hợp lệ"
- *       403:
- *         description: Người dùng không thuộc phòng chat
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Người dùng không thuộc phòng chat"
- *       404:
- *         description: Không tìm thấy tin nhắn
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Không tìm thấy tin nhắn"
- *       500:
- *         description: Lỗi đánh dấu tin nhắn đã đọc
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi đánh dấu tin nhắn đã đọc"
- *                 error:
- *                   type: string
- */
-
-/**
- * @swagger
- * /api/message/room/{roomId}/calls:
- *   get:
- *     summary: Lấy lịch sử cuộc gọi trong phòng chat
- *     tags: [Message]
+ *     summary: Chuyển quyền admin cho thành viên khác
+ *     tags: [Room]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -1316,67 +1075,26 @@
  *           type: string
  *         description: ID của phòng chat
  *         example: "507f1f77bcf86cd799439011"
- *     responses:
- *       200:
- *         description: Danh sách tin nhắn cuộc gọi
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Message'
- *       400:
- *         description: ID phòng chat không hợp lệ
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "ID phòng chat không hợp lệ"
- *       500:
- *         description: Lỗi lấy lịch sử cuộc gọi
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Lỗi lấy lịch sử cuộc gọi"
- *                 error:
- *                   type: string
- */
-
-/**
- * @swagger
- * /api/message/call:
- *   post:
- *     summary: Tạo tin nhắn cuộc gọi
- *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CallCreate'
- *           example:
- *             roomId: "507f1f77bcf86cd799439011"
- *             nguoiGuiId: "507f1f77bcf86cd799439012"
- *             loai: "video"
- *             trangThai: "ended"
- *             thoiLuong: 120
- *             thanhVien: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"]
+ *             type: object
+ *             required:
+ *               - newAdminId
+ *             properties:
+ *               newAdminId:
+ *                 type: string
+ *                 description: ID người dùng sẽ trở thành admin mới
+ *                 example: "507f1f77bcf86cd799439015"
  *     responses:
- *       201:
- *         description: Tin nhắn cuộc gọi được tạo thành công
+ *       200:
+ *         description: Chuyển quyền admin thành công
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Message'
+ *               $ref: '#/components/schemas/Room'
  *       400:
  *         description: Dữ liệu không hợp lệ
  *         content:
@@ -1386,7 +1104,43 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Thiếu thông tin cuộc gọi"
+ *             examples:
+ *               not_group:
+ *                 summary: Không phải phòng nhóm
+ *                 value:
+ *                   message: "Chỉ có thể chuyển quyền admin trong phòng nhóm"
+ *               invalid_user:
+ *                 summary: Người dùng không hợp lệ
+ *                 value:
+ *                   message: "Người dùng không hợp lệ hoặc không phải thành viên active"
+ *       401:
+ *         description: Chưa đăng nhập
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Bạn chưa đăng nhập"
+ *       403:
+ *         description: Token không hợp lệ hoặc chỉ admin hiện tại mới có thể chuyển quyền
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               invalid_token:
+ *                 summary: Token không hợp lệ
+ *                 value:
+ *                   message: "Token không hợp lệ"
+ *               not_current_admin:
+ *                 summary: Không phải admin hiện tại
+ *                 value:
+ *                   message: "Chỉ admin hiện tại mới có thể chuyển quyền"
  *       404:
  *         description: Không tìm thấy phòng chat
  *         content:
@@ -1398,7 +1152,7 @@
  *                   type: string
  *                   example: "Không tìm thấy phòng chat"
  *       500:
- *         description: Lỗi tạo tin nhắn cuộc gọi
+ *         description: Lỗi chuyển quyền admin
  *         content:
  *           application/json:
  *             schema:
@@ -1406,17 +1160,7 @@
  *               properties:
  *                 message:
  *                   type: string
- *                   example: "Lỗi tạo tin nhắn cuộc gọi"
+ *                   example: "Lỗi chuyển quyền admin"
  *                 error:
  *                   type: string
- */
-
-/**
- * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
  */
