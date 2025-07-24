@@ -3,26 +3,22 @@ const PhongChat = require('../models/PhongChat');
 const TinNhan = require('../models/TinNhan');
 const { createNotification } = require('./notificationChatController');
 
-// Kiểm tra quyền truy cập phòng chat
-const checkRoomAccess = async (roomId, userId) => {
-  const room = await PhongChat.findById(roomId);
-  if (!room) {
-    throw new Error('Không tìm thấy phòng chat');
-  }
-  const member = room.thanhVien.find(m => m.nguoiDung.toString() === userId.toString());
-  if (!member || member.trangThai !== 'active') {
-    throw new Error('Người dùng không thuộc phòng chat');
-  }
-  return { room, member };
-};
-
-// Lấy tất cả phòng chat (cho admin hoặc debug)
 const getAllRom = async (req, res) => {
   try {
     const rooms = await PhongChat.find()
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
-      .populate('tinNhanCuoi');
+      .populate('thanhVien.nguoiDung')
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'tinNhanCuoi',
+        select: 'noiDung createdAt loaiTinNhan nguoiGuiId',
+        populate: {
+          path: 'nguoiGuiId',
+          select: 'ten anhDaiDien'
+        }
+      });
     res.status(200).json(rooms);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi lấy danh sách phòng chat', error: error.message });
@@ -35,9 +31,22 @@ const getRoomsOfUser = async (req, res) => {
 
   try {
     const rooms = await PhongChat.find({ 'thanhVien.nguoiDung': userId, 'thanhVien.trangThai': 'active' })
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
-      .populate('tinNhanCuoi')
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'tinNhanCuoi',
+        select: 'noiDung createdAt loaiTinNhan nguoiGuiId',
+        populate: {
+          path: 'nguoiGuiId',
+          select: 'ten anhDaiDien'
+        }
+      })
       .sort({ updatedAt: -1 });
 
     res.status(200).json(rooms);
@@ -49,17 +58,23 @@ const getRoomsOfUser = async (req, res) => {
 // Lấy thông tin chi tiết phòng chat
 const getRoomById = async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user.id;
 
   try {
-    await checkRoomAccess(roomId, userId);
-
     const room = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
       .populate({
         path: 'tinNhan',
-        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' },
+        populate: { 
+          path: 'nguoiGuiId', 
+          select: 'ten anhDaiDien' 
+        },
         options: { sort: { createdAt: 1 } },
       });
 
@@ -69,12 +84,6 @@ const getRoomById = async (req, res) => {
 
     res.status(200).json(room);
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi lấy thông tin phòng chat', error: error.message });
   }
 };
@@ -112,20 +121,37 @@ const createRoom = async (req, res) => {
 
     const otherMembers = thanhVien.filter(m => m.nguoiDung.toString() !== nguoiTao);
     for (const member of otherMembers) {
-      await createNotification({
-        nguoiNhan: member.nguoiDung,
-        loai: 'room_update',
-        noiDung: `Bạn đã được thêm vào phòng ${tenPhong || 'chat riêng'}`,
-        roomId: newRoom._id,
-      }, req.io);
+      if (req.io) {
+        await createNotification({
+          nguoiNhan: member.nguoiDung,
+          loai: 'room_update',
+          noiDung: `Bạn đã được thêm vào phòng ${tenPhong || 'chat riêng'}`,
+          roomId: newRoom._id,
+        }, req.io);
+      }
     }
 
     const populatedRoom = await PhongChat.findById(newRoom._id)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
-      .populate('tinNhanCuoi');
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'tinNhanCuoi',
+        select: 'noiDung createdAt loaiTinNhan nguoiGuiId',
+        populate: {
+          path: 'nguoiGuiId',
+          select: 'ten anhDaiDien'
+        }
+      });
 
-    req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
+    if (req.io) {
+      req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
+    }
     res.status(201).json(populatedRoom);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi tạo phòng', error: error.message });
@@ -151,11 +177,20 @@ const findOrCreatePrivateRoom = async (req, res) => {
       'thanhVien.trangThai': 'active',
       $where: 'this.thanhVien.length == 2',
     })
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
       .populate({
         path: 'tinNhan',
-        populate: { path: 'nguoiGuiId', select: 'ten anhDaiDien' },
+        populate: { 
+          path: 'nguoiGuiId', 
+          select: 'ten anhDaiDien' 
+        },
         options: { sort: { createdAt: 1 } },
       });
 
@@ -193,19 +228,36 @@ const findOrCreatePrivateRoom = async (req, res) => {
       tinNhanCuoi: systemMessage._id,
     });
 
-    await createNotification({
-      nguoiNhan: userId2,
-      loai: 'room_update',
-      noiDung: `Bạn đã được thêm vào phòng chat riêng với ${userId1}`,
-      roomId: newRoom._id,
-    }, req.io);
+    if (req.io) {
+      await createNotification({
+        nguoiNhan: userId2,
+        loai: 'room_update',
+        noiDung: `Bạn đã được thêm vào phòng chat riêng với ${userId1}`,
+        roomId: newRoom._id,
+      }, req.io);
+    }
 
     const populatedRoom = await PhongChat.findById(newRoom._id)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
-      .populate('tinNhanCuoi');
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'tinNhanCuoi',
+        select: 'noiDung createdAt loaiTinNhan nguoiGuiId',
+        populate: {
+          path: 'nguoiGuiId',
+          select: 'ten anhDaiDien'
+        }
+      });
 
-    req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
+    if (req.io) {
+      req.io.to(newRoom._id.toString()).emit('roomCreated', populatedRoom);
+    }
     res.status(201).json({
       room: populatedRoom,
       isNewRoom: true,
@@ -219,11 +271,17 @@ const findOrCreatePrivateRoom = async (req, res) => {
 // Thêm tin nhắn vào phòng chat
 const addMessageToRoom = async (req, res) => {
   const { roomId } = req.params;
-  const { messageId } = req.body;
-  const userId = req.user.id;
+  const { messageId, userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
-    const { room } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
 
     const message = await TinNhan.findById(messageId);
     if (!message) {
@@ -237,26 +295,24 @@ const addMessageToRoom = async (req, res) => {
 
       const otherMembers = room.thanhVien.filter(m => m.nguoiDung.toString() !== userId && m.trangThai === 'active');
       for (const member of otherMembers) {
-        await createNotification({
-          nguoiNhan: member.nguoiDung,
-          loai: 'new_message',
-          noiDung: `Tin nhắn mới trong phòng ${room.tenPhong || 'chat riêng'}`,
-          roomId,
-          tinNhanId: messageId,
-        }, req.io);
+        if (req.io) {
+          await createNotification({
+            nguoiNhan: member.nguoiDung,
+            loai: 'new_message',
+            noiDung: `Tin nhắn mới trong phòng ${room.tenPhong || 'chat riêng'}`,
+            roomId,
+            tinNhanId: messageId,
+          }, req.io);
+        }
       }
 
-      req.io.to(roomId).emit('messageAdded', { roomId, messageId });
+      if (req.io) {
+        req.io.to(roomId).emit('messageAdded', { roomId, messageId });
+      }
     }
 
     res.status(200).json({ message: 'Thêm tin nhắn vào phòng thành công' });
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi thêm tin nhắn vào phòng', error: error.message });
   }
 };
@@ -264,10 +320,23 @@ const addMessageToRoom = async (req, res) => {
 // Xóa tin nhắn khỏi phòng chat
 const removeMessageFromRoom = async (req, res) => {
   const { roomId, messageId } = req.params;
-  const userId = req.user.id;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === userId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (member.vaiTro !== 'admin') {
       return res.status(403).json({ message: 'Chỉ admin mới có thể xóa tin nhắn khỏi phòng' });
     }
@@ -278,15 +347,11 @@ const removeMessageFromRoom = async (req, res) => {
     }
     await room.save();
 
-    req.io.to(roomId).emit('messageRemoved', { roomId, messageId });
+    if (req.io) {
+      req.io.to(roomId).emit('messageRemoved', { roomId, messageId });
+    }
     res.status(200).json({ message: 'Xóa tin nhắn khỏi phòng thành công' });
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi xóa tin nhắn khỏi phòng', error: error.message });
   }
 };
@@ -294,11 +359,23 @@ const removeMessageFromRoom = async (req, res) => {
 // Cập nhật thông tin phòng chat
 const updateRoom = async (req, res) => {
   const { roomId } = req.params;
-  const { tenPhong, anhDaiDien, thanhVien } = req.body;
-  const userId = req.user.id;
+  const { tenPhong, anhDaiDien, thanhVien, userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === userId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (member.vaiTro !== 'admin') {
       return res.status(403).json({ message: 'Chỉ admin mới có thể cập nhật phòng chat' });
     }
@@ -309,8 +386,14 @@ const updateRoom = async (req, res) => {
     if (thanhVien) updateData.thanhVien = thanhVien;
 
     const updatedRoom = await PhongChat.findByIdAndUpdate(roomId, updateData, { new: true, runValidators: true })
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien');
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      });
 
     if (Object.keys(updateData).length > 0) {
       const systemMessage = await TinNhan.create({
@@ -329,25 +412,23 @@ const updateRoom = async (req, res) => {
 
       const otherMembers = updatedRoom.thanhVien.filter(m => m.nguoiDung.toString() !== userId && m.trangThai === 'active');
       for (const member of otherMembers) {
-        await createNotification({
-          nguoiNhan: member.nguoiDung,
-          loai: 'room_update',
-          noiDung: `Phòng ${tenPhong || 'chat riêng'} đã được cập nhật`,
-          roomId,
-        }, req.io);
+        if (req.io) {
+          await createNotification({
+            nguoiNhan: member.nguoiDung,
+            loai: 'room_update',
+            noiDung: `Phòng ${tenPhong || 'chat riêng'} đã được cập nhật`,
+            roomId,
+          }, req.io);
+        }
       }
 
-      req.io.to(roomId).emit('roomUpdated', updatedRoom);
+      if (req.io) {
+        req.io.to(roomId).emit('roomUpdated', updatedRoom);
+      }
     }
 
     res.status(200).json(updatedRoom);
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi cập nhật phòng chat', error: error.message });
   }
 };
@@ -355,10 +436,23 @@ const updateRoom = async (req, res) => {
 // Xóa phòng chat
 const deleteRoom = async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user.id;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === userId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (member.vaiTro !== 'admin') {
       return res.status(403).json({ message: 'Chỉ admin mới có thể xóa phòng chat' });
     }
@@ -368,31 +462,32 @@ const deleteRoom = async (req, res) => {
 
     const otherMembers = room.thanhVien.filter(m => m.nguoiDung.toString() !== userId && m.trangThai === 'active');
     for (const member of otherMembers) {
-      await createNotification({
-        nguoiNhan: member.nguoiDung,
-        loai: 'room_update',
-        noiDung: `Phòng ${room.tenPhong || 'chat riêng'} đã bị xóa`,
-        roomId,
-      }, req.io);
+      if (req.io) {
+        await createNotification({
+          nguoiNhan: member.nguoiDung,
+          loai: 'room_update',
+          noiDung: `Phòng ${room.tenPhong || 'chat riêng'} đã bị xóa`,
+          roomId,
+        }, req.io);
+      }
     }
 
-    req.io.to(roomId).emit('roomDeleted', { roomId });
+    if (req.io) {
+      req.io.to(roomId).emit('roomDeleted', { roomId });
+    }
     res.status(200).json({ message: 'Xóa phòng thành công' });
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi xóa phòng', error: error.message });
   }
 };
 
 // Tìm kiếm phòng chat
 const searchRooms = async (req, res) => {
-  const { keyword } = req.query;
-  const userId = req.user.id;
+  const { keyword, userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
     const query = { 'thanhVien.nguoiDung': userId, 'thanhVien.trangThai': 'active' };
@@ -401,9 +496,22 @@ const searchRooms = async (req, res) => {
     }
 
     const rooms = await PhongChat.find(query)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien')
-      .populate('tinNhanCuoi')
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'tinNhanCuoi',
+        select: 'noiDung createdAt loaiTinNhan nguoiGuiId',
+        populate: {
+          path: 'nguoiGuiId',
+          select: 'ten anhDaiDien'
+        }
+      })
       .sort({ updatedAt: -1 });
 
     res.json(rooms);
@@ -415,11 +523,23 @@ const searchRooms = async (req, res) => {
 // Thêm thành viên vào phòng chat nhóm
 const addMemberToRoom = async (req, res) => {
   const { roomId } = req.params;
-  const { userId: newMemberId } = req.body;
-  const userId = req.user.id;
+  const { userId: newMemberId, adminUserId } = req.body;
+
+  if (!adminUserId) {
+    return res.status(400).json({ message: 'Thiếu thông tin adminUserId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === adminUserId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (room.loaiPhong !== 'group') {
       return res.status(400).json({ message: 'Chỉ có thể thêm thành viên vào phòng nhóm' });
     }
@@ -441,10 +561,10 @@ const addMemberToRoom = async (req, res) => {
 
     const systemMessage = await TinNhan.create({
       roomId,
-      nguoiGuiId: userId,
+      nguoiGuiId: adminUserId,
       noiDung: `Người dùng ${newMemberId} đã được thêm vào phòng`,
       loaiTinNhan: 'system',
-      daDoc: [userId],
+      daDoc: [adminUserId],
       trangThai: 'sent',
     });
 
@@ -453,26 +573,30 @@ const addMemberToRoom = async (req, res) => {
       tinNhanCuoi: systemMessage._id,
     });
 
-    await createNotification({
-      nguoiNhan: newMemberId,
-      loai: 'room_update',
-      noiDung: `Bạn đã được thêm vào phòng ${room.tenPhong}`,
-      roomId,
-    }, req.io);
+    if (req.io) {
+      await createNotification({
+        nguoiNhan: newMemberId,
+        loai: 'room_update',
+        noiDung: `Bạn đã được thêm vào phòng ${room.tenPhong}`,
+        roomId,
+      }, req.io);
+    }
 
     const updatedRoom = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien');
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      });
 
-    req.io.to(roomId).emit('memberAdded', { roomId, newMemberId });
+    if (req.io) {
+      req.io.to(roomId).emit('memberAdded', { roomId, newMemberId });
+    }
     res.status(200).json(updatedRoom);
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi thêm thành viên', error: error.message });
   }
 };
@@ -480,10 +604,23 @@ const addMemberToRoom = async (req, res) => {
 // Rời phòng chat nhóm
 const leaveRoom = async (req, res) => {
   const { roomId } = req.params;
-  const userId = req.user.id;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: 'Thiếu thông tin userId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === userId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (room.loaiPhong !== 'group') {
       return res.status(400).json({ message: 'Chỉ có thể rời khỏi phòng nhóm' });
     }
@@ -511,23 +648,21 @@ const leaveRoom = async (req, res) => {
 
     const otherMembers = room.thanhVien.filter(m => m.nguoiDung.toString() !== userId && m.trangThai === 'active');
     for (const member of otherMembers) {
-      await createNotification({
-        nguoiNhan: member.nguoiDung,
-        loai: 'room_update',
-        noiDung: `Người dùng ${userId} đã rời phòng ${room.tenPhong}`,
-        roomId,
-      }, req.io);
+      if (req.io) {
+        await createNotification({
+          nguoiNhan: member.nguoiDung,
+          loai: 'room_update',
+          noiDung: `Người dùng ${userId} đã rời phòng ${room.tenPhong}`,
+          roomId,
+        }, req.io);
+      }
     }
 
-    req.io.to(roomId).emit('memberLeft', { roomId, userId });
+    if (req.io) {
+      req.io.to(roomId).emit('memberLeft', { roomId, userId });
+    }
     res.status(200).json({ message: 'Rời phòng thành công' });
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi rời phòng', error: error.message });
   }
 };
@@ -535,11 +670,23 @@ const leaveRoom = async (req, res) => {
 // Chuyển quyền admin
 const transferAdmin = async (req, res) => {
   const { roomId } = req.params;
-  const { newAdminId } = req.body;
-  const userId = req.user.id;
+  const { newAdminId, currentAdminId } = req.body;
+
+  if (!currentAdminId) {
+    return res.status(400).json({ message: 'Thiếu thông tin currentAdminId' });
+  }
 
   try {
-    const { room, member } = await checkRoomAccess(roomId, userId);
+    const room = await PhongChat.findById(roomId);
+    if (!room) {
+      return res.status(404).json({ message: 'Không tìm thấy phòng chat' });
+    }
+
+    const member = room.thanhVien.find(m => m.nguoiDung.toString() === currentAdminId.toString());
+    if (!member || member.trangThai !== 'active') {
+      return res.status(403).json({ message: 'Người dùng không thuộc phòng chat' });
+    }
+
     if (room.loaiPhong !== 'group') {
       return res.status(400).json({ message: 'Chỉ có thể chuyển quyền admin trong phòng nhóm' });
     }
@@ -558,10 +705,10 @@ const transferAdmin = async (req, res) => {
 
     const systemMessage = await TinNhan.create({
       roomId,
-      nguoiGuiId: userId,
+      nguoiGuiId: currentAdminId,
       noiDung: `Quyền admin đã được chuyển cho người dùng ${newAdminId}`,
       loaiTinNhan: 'system',
-      daDoc: [userId],
+      daDoc: [currentAdminId],
       trangThai: 'sent',
     });
 
@@ -570,29 +717,33 @@ const transferAdmin = async (req, res) => {
       tinNhanCuoi: systemMessage._id,
     });
 
-    const otherMembers = room.thanhVien.filter(m => m.nguoiDung.toString() !== userId && m.trangThai === 'active');
+    const otherMembers = room.thanhVien.filter(m => m.nguoiDung.toString() !== currentAdminId && m.trangThai === 'active');
     for (const member of otherMembers) {
-      await createNotification({
-        nguoiNhan: member.nguoiDung,
-        loai: 'room_update',
-        noiDung: `Người dùng ${newAdminId} đã trở thành admin của phòng ${room.tenPhong}`,
-        roomId,
-      }, req.io);
+      if (req.io) {
+        await createNotification({
+          nguoiNhan: member.nguoiDung,
+          loai: 'room_update',
+          noiDung: `Người dùng ${newAdminId} đã trở thành admin của phòng ${room.tenPhong}`,
+          roomId,
+        }, req.io);
+      }
     }
 
     const updatedRoom = await PhongChat.findById(roomId)
-      .populate('thanhVien.nguoiDung', 'ten anhDaiDien')
-      .populate('nguoiTao', 'ten anhDaiDien');
+      .populate({
+        path: 'thanhVien.nguoiDung',
+        select: 'ten anhDaiDien email tenDangNhap'
+      })
+      .populate({
+        path: 'nguoiTao',
+        select: 'ten anhDaiDien email tenDangNhap'
+      });
 
-    req.io.to(roomId).emit('adminTransferred', { roomId, newAdminId });
+    if (req.io) {
+      req.io.to(roomId).emit('adminTransferred', { roomId, newAdminId });
+    }
     res.status(200).json(updatedRoom);
   } catch (error) {
-    if (error.message === 'Không tìm thấy phòng chat') {
-      return res.status(404).json({ message: error.message });
-    }
-    if (error.message === 'Người dùng không thuộc phòng chat') {
-      return res.status(403).json({ message: error.message });
-    }
     res.status(500).json({ message: 'Lỗi chuyển quyền admin', error: error.message });
   }
 };

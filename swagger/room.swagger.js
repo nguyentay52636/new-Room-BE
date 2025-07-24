@@ -176,25 +176,6 @@
  *                 type: string
  *                 enum: [active, left]
  *           description: Danh sách thành viên mới
- *     RoomListResponse:
- *       type: object
- *       properties:
- *         rooms:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/Room'
- *         total:
- *           type: integer
- *           description: Tổng số phòng
- *           example: 50
- *         page:
- *           type: integer
- *           description: Trang hiện tại
- *           example: 1
- *         totalPages:
- *           type: integer
- *           description: Tổng số trang
- *           example: 5
  */
 
 /**
@@ -366,25 +347,15 @@
  *           type: string
  *         description: ID của người dùng
  *         example: "507f1f77bcf86cd799439012"
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Số trang (mặc định 1)
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Số phòng mỗi trang (mặc định 20)
  *     responses:
  *       200:
  *         description: Danh sách phòng chat của người dùng (sắp xếp theo thời gian cập nhật mới nhất)
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/RoomListResponse'
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Room'
  *       500:
  *         description: Lỗi lấy danh sách phòng chat
  *         content:

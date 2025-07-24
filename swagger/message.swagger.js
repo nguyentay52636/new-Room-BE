@@ -244,8 +244,6 @@
  *   get:
  *     summary: Lấy danh sách tin nhắn trong phòng chat
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: roomId
@@ -263,14 +261,6 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Message'
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Unauthorized"
  *       403:
  *         description: Người dùng không thuộc phòng chat
  *         content:
@@ -307,8 +297,6 @@
  *       Tạo tin nhắn mới trong phòng chat. Hỗ trợ upload file đính kèm (tối đa 5 file).
  *       Yêu cầu phải có roomId và ít nhất một trong: noiDung, tapTin, hoặc loaiTinNhan = 'system'.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -364,12 +352,6 @@
  *                 summary: Tin nhắn trả lời không hợp lệ
  *                 value:
  *                   message: "Tin nhắn trả lời không hợp lệ"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Người dùng không thuộc phòng chat
  *         content:
@@ -406,8 +388,6 @@
  *       Tạo tin nhắn đặc biệt cho cuộc gọi với thông tin chi tiết về cuộc gọi.
  *       Tin nhắn sẽ có loaiTinNhan = 'cuoc_goi' và chứa thông tin cuộc gọi.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -457,12 +437,6 @@
  *                 summary: Trạng thái cuộc gọi không hợp lệ
  *                 value:
  *                   message: "Trạng thái cuộc gọi không hợp lệ: missed, ended, declined, ongoing"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Người dùng không thuộc phòng chat
  *         content:
@@ -499,8 +473,6 @@
  *       Chỉnh sửa nội dung tin nhắn. Chỉ người gửi tin nhắn mới có quyền chỉnh sửa.
  *       Trạng thái tin nhắn sẽ tự động chuyển thành 'edited'.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -533,12 +505,6 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               message: "ID tin nhắn không hợp lệ"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Không có quyền chỉnh sửa tin nhắn
  *         content:
@@ -571,8 +537,6 @@
  *       Xóa mềm tin nhắn. Chỉ người gửi tin nhắn mới có quyền xóa.
  *       Nội dung tin nhắn sẽ được thay thế bằng '[deleted]' và trạng thái chuyển thành 'deleted'.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -596,12 +560,6 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               message: "ID tin nhắn không hợp lệ"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Không có quyền xóa tin nhắn
  *         content:
@@ -638,8 +596,6 @@
  *       Thu hồi tin nhắn đã gửi. Chỉ người gửi tin nhắn mới có quyền thu hồi.
  *       Nội dung tin nhắn sẽ được thay thế bằng '[Tin nhắn đã được thu hồi]' và trạng thái chuyển thành 'recalled'.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -663,12 +619,6 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               message: "ID tin nhắn không hợp lệ"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Không có quyền thu hồi tin nhắn
  *         content:
@@ -705,8 +655,6 @@
  *       Đánh dấu tin nhắn là đã đọc bởi người dùng hiện tại.
  *       ID người dùng sẽ được thêm vào mảng daDoc nếu chưa có.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -730,12 +678,6 @@
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               message: "ID tin nhắn không hợp lệ"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       404:
  *         description: Không tìm thấy tin nhắn
  *         content:
@@ -764,8 +706,6 @@
  *       Tìm kiếm tin nhắn trong phòng chat theo từ khóa và/hoặc khoảng thời gian.
  *       Hỗ trợ tìm kiếm không phân biệt hoa thường.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: roomId
@@ -803,12 +743,6 @@
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Message'
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Người dùng không thuộc phòng chat
  *         content:
@@ -845,8 +779,6 @@
  *       Ghim tin nhắn trong phòng chat. Chỉ admin của phòng mới có quyền ghim tin nhắn.
  *       Tin nhắn sẽ được thêm vào danh sách tinNhanGhim của phòng chat.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: roomId
@@ -871,12 +803,6 @@
  *               $ref: '#/components/schemas/SuccessResponse'
  *             example:
  *               message: "Ghim tin nhắn thành công"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Chỉ admin mới có thể ghim tin nhắn
  *         content:
@@ -913,8 +839,6 @@
  *       Gỡ ghim tin nhắn trong phòng chat. Chỉ admin của phòng mới có quyền gỡ ghim tin nhắn.
  *       Tin nhắn sẽ được xóa khỏi danh sách tinNhanGhim của phòng chat.
  *     tags: [Message]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: roomId
@@ -939,12 +863,6 @@
  *               $ref: '#/components/schemas/SuccessResponse'
  *             example:
  *               message: "Gỡ ghim tin nhắn thành công"
- *       401:
- *         description: Chưa xác thực
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       403:
  *         description: Chỉ admin mới có thể gỡ ghim tin nhắn
  *         content:
